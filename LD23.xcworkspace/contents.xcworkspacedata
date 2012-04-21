@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Workspace
+   version = "1.0">
+   <FileRef
+      location = "container:src/LD23/LD23.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:../Talon/src/Talon/Talon.xcodeproj">
+   </FileRef>
+</Workspace>
