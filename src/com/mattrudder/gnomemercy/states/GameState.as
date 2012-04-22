@@ -1,59 +1,81 @@
 package com.mattrudder.gnomemercy.states 
 {
 	import com.mattrudder.gnomemercy.Assets;
+	import com.mattrudder.gnomemercy.entity.Enemy;
+	import com.mattrudder.gnomemercy.entity.Bird;
+	import com.mattrudder.gnomemercy.entity.Level;
 	import com.mattrudder.gnomemercy.entity.Player;
 	import com.mattrudder.gnomemercy.Registry;
 	import flash.utils.ByteArray;
 	import mx.utils.StringUtil;
-	import org.axgl.*;
-	import org.axgl.input.AxMouse;
-	import org.axgl.render.*;
-	import org.axgl.text.*;
-	import org.axgl.tilemap.AxTilemap;
+	import net.flashpunk.Entity;
+	import net.flashpunk.Graphic;
+	import net.flashpunk.graphics.Tilemap;
+	import net.flashpunk.World;
+	import net.flashpunk.FP;
 	
-	public class GameState extends AxState
+	public class GameState extends World
 	{	
 		public var player:Player;
+		public var level:Level;
 		
-		public var playerBullets:AxGroup = new AxGroup;
-		
-		override public function create():void 
+		public function GameState()
 		{
 			Registry.game = this;
 			
-			loadMap();
+			level = new Level(Assets.MAP);
+			add(level);
 			
-			//Ax.background = new AxColor(1.0, 0.3882352941176471, 0.2784313725490196);
-			Ax.background = new AxColor(0, 0, 0);
-			add(new AxText(10, 10, null, "Gnome Mercy"));
-			add(mouseLabel = new AxText(10, 20, null, "Mouse: (0, 0)"));
+			level.spawnPlayer();
 			
-			
-			add(playerBullets);
-			
-			add(player = new Player(50, 50));
-			Registry.player = player;
-			
-			
+			followPlayer(100000);
 		}
-		
+
 		override public function update():void 
 		{
-			mouseLabel.text = StringUtil.substitute("Mouse: ({0}, {1})    Mouse Angle: ({2})    Player Angle: ({3})", Ax.mouse.x.toFixed(2), Ax.mouse.y.toFixed(2), (AxU.getAngleToMouse(player.x, player.y) * (180 / Math.PI)).toFixed(2), player.angle.toFixed(2));
+			var enemyList:Array = [];
+			getClass(Enemy, enemyList);
+			if (enemyList.length == 0)
+			{
+				level.spawnEnemy(Bird);
+				level.spawnEnemy(Bird);
+				level.spawnEnemy(Bird);
+				level.spawnEnemy(Bird);
+			}
+		
+			followPlayer(c_cameraSpeed);
 			super.update();
 		}
 		
-		private function loadMap():void
+		private function followPlayer(speed:int):void 
 		{
-			var byteArray:ByteArray = new Assets.MAP();
-			var data:XML = new XML(byteArray.readUTFBytes(byteArray.length));
-			var tiles:String = data.layer.data.toString();
+			if (player == null)
+				return;
+				
+			if (player.x - FP.camera.x < c_cameraOffset)
+			{
+				if (FP.camera.x > 0)
+					FP.camera.x -= speed;
+			}
+			else if ((FP.camera.x + FP.width) - (player.x + player.width) < c_cameraOffset)
+			{
+				if (FP.camera.x + FP.width < level.width)
+					FP.camera.x += speed;
+			}
 			
-			var tilemap:AxTilemap = new AxTilemap();
-			tilemap.build(tiles, Assets.TILES, data.tileset.@tilewidth, data.tileset.@tileheight);
-			add(tilemap);
+			if (player.y - FP.camera.y < c_cameraOffset)
+			{
+				if (FP.camera.y > 0)
+					FP.camera.y -= speed;
+			}
+			else if ((FP.camera.y + FP.height) - (player.y + player.height) < c_cameraOffset)
+			{
+				if (FP.camera.y + FP.height < level.height)
+					FP.camera.y += speed;
+			}
 		}
 		
-		private var mouseLabel:AxText;
+		private static const c_cameraOffset:int = 200;
+		private static const c_cameraSpeed:int = 5;
 	}
 }
