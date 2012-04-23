@@ -1,34 +1,26 @@
 package com.mattrudder.gnomemercy
 {
-	import com.mattrudder.gnomemercy.states.GameState;
+	import com.mattrudder.gnomemercy.states.*;
+	import net.flashpunk.*;
+	import net.flashpunk.graphics.Text;
+	import net.flashpunk.utils.*;
 	import flash.ui.Mouse;
-	import net.flashpunk.Engine;
-	import net.flashpunk.FP;
-	import net.flashpunk.utils.Draw;
-	import net.flashpunk.utils.Key;
 	
 	public class GnomeMercy extends Engine
 	{
 		public function GnomeMercy():void 
 		{
 			super(800, 600);
+			
+			Text.font = "Alice in Wonderland";
 		}
 		
 		override public function init():void 
 		{
 			super.init();
 			
-			m_mouseHidden = true;
-			
-			FP.console.enable();
-			FP.world = new GameState();
+			//FP.console.enable();
+			FP.world = new TitleState();
 		}
-		
-		override public function update():void 
-		{
-			super.update();
-		}
-		
-		private var m_mouseHidden:Boolean;
 	}
 }

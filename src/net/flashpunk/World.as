@@ -1,5 +1,6 @@
 ﻿package net.flashpunk
 {
+	import net.flashpunk.masks.TransformedPixelmask;
 	import flash.geom.Point;
 	import flash.utils.Dictionary;
 
@@ -60,6 +61,10 @@
 					e.update();
 				}
 				if (e._graphic && e._graphic.active) e._graphic.update();
+				
+				//Check for any mask types that can update and call their sync functions
+				if (e.mask is TransformedPixelmask) (TransformedPixelmask)(e.mask).sync();
+				
 				e = e._updateNext;
 			}
 		}

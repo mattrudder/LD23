@@ -3,6 +3,11 @@ package com.mattrudder.gnomemercy.entity
 	import com.mattrudder.gnomemercy.Assets;
 	import com.mattrudder.gnomemercy.Registry;
 	import com.mattrudder.gnomemercy.entity.Enemy;
+	import com.mattrudder.utils.AnimUtils;
+	import com.mattrudder.utils.MathUtils;
+	import flash.geom.Point;
+	import net.flashpunk.*;
+	import net.flashpunk.graphics.Spritemap;
 	
 	public class Bird extends Enemy 
 	{
@@ -17,18 +22,39 @@ package com.mattrudder.gnomemercy.entity
 			sprite.add("walk-south-idle", [2], 1, false);
 			
 			sprite.play("walk-south");
+			layer = 1
+			
+			m_flightSpeed = MathUtils.randomRange(Math.min(Registry.game.wave, c_flightSpeedMax), 3);
 		}
 		
 		override public function update():void 
 		{
 			super.update();
 			
-			moveTowards(Registry.game.player.x, Registry.game.player.y, 7);
+			AnimUtils.playDirectionToPlayer(x, y, sprite);
 			
-			if (collide("projectile", x, y))
+			var point:Point = FP.point;
+			point.x = Registry.game.player.x - x;
+			point.y = Registry.game.player.y - y;
+			
+			if (point.x * point.x + point.y * point.y > m_flightSpeed)
 			{
-				world.remove(this);
+				point.normalize(m_flightSpeed);
+			}
+			
+			//if (Registry.game.player.collidable)
+				tryMove(x + point.x, y + point.y);
+			
+			var hit:Entity = collide("projectile", x, y);
+			if (hit)
+			{
+				die();
+				world.remove(hit);
 			}
 		}
+		
+		private static const c_flightSpeedMax:uint = 10;
+		
+		private var m_flightSpeed:uint;
 	}
 }

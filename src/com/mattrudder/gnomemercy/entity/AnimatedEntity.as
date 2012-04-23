@@ -1,7 +1,9 @@
 package com.mattrudder.gnomemercy.entity 
 {
 	import net.flashpunk.Entity;
+	import net.flashpunk.FP;
 	import net.flashpunk.graphics.Spritemap;
+	import net.flashpunk.masks.TransformedPixelmask;
 	
 	public class AnimatedEntity extends Entity 
 	{
@@ -19,9 +21,10 @@ package com.mattrudder.gnomemercy.entity
 			
 			this.graphic = m_sprite;
 			this.layer = 5;
-			// TODO: Fix bounding boxes!
+			this.mask = new TransformedPixelmask(m_sprite, m_sprite.scaledWidth / 2, m_sprite.scaledHeight / 2);
 			
-			setHitbox(m_sprite.scaledWidth, m_sprite.scaledHeight);
+			
+			//setHitbox(m_sprite.scaledWidth, m_sprite.scaledHeight);
 		}
 		
 		private var m_sprite:Spritemap;

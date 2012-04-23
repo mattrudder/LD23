@@ -8,7 +8,7 @@ package com.mattrudder.gnomemercy.entity
 	{
 		public function LawnDart(x:Number, y:Number, angle:Number, speed:Number) 
 		{
-			super(x, y, angle, speed, PLAYER, 1.0, c_spriteWidth, c_spriteHeight, Assets.LAWNDART);
+			super(x, y, angle, speed, PLAYER, 1.35, c_spriteWidth, c_spriteHeight, Assets.LAWNDART);
 		}
 		
 		override public function update():void 

@@ -1,22 +1,16 @@
 package com.mattrudder.gnomemercy.entity 
 {
-	import com.mattrudder.utils.DebugUtils;
-	import com.mattrudder.utils.MathUtils;
+	import com.mattrudder.utils.*;
+	import com.mattrudder.gnomemercy.*;
+	import flash.geom.ColorTransform;
+	import net.flashpunk.*;
+	import net.flashpunk.graphics.*;
+	import net.flashpunk.tweens.misc.ColorTween;
+	import net.flashpunk.utils.*;
 	import flash.display.Sprite;
 	import flash.geom.Vector3D;
-	import net.flashpunk.Entity;
 	import mx.utils.StringUtil;
-	import com.mattrudder.gnomemercy.Assets;
-	import com.mattrudder.gnomemercy.Registry;
-	import net.flashpunk.FP;
-	import net.flashpunk.Graphic;
-	import net.flashpunk.graphics.Graphiclist;
-	import net.flashpunk.graphics.Image;
-	import net.flashpunk.graphics.Spritemap;
-	import net.flashpunk.utils.Draw;
-	import net.flashpunk.utils.Input;
-	import net.flashpunk.utils.Key;
-	
+
 	public class Player extends AnimatedEntity
 	{
 		public function get fire():Number
@@ -24,17 +18,28 @@ package com.mattrudder.gnomemercy.entity
 			return BASE_FIRE;
 		}
 		
+		public function get health():Number
+		{
+			return m_health;
+		}
+		
+		public function get walkSpeed():Number
+		{
+			return m_currentWalkSpeed;
+		}
+		
 		public function Player(x:Number, y:Number) 
 		{
 			super(x, y, 0.3, 144, 252, Assets.PLAYER);
+			sprite.add("death", [6], 1, false);
 			sprite.add("walk-north", [0, 1, 2], 8, true);
 			sprite.add("walk-north-idle", [1], 1, false);
-			sprite.add("walk-side", [3, 4, 8, 4], 8, true);
-			sprite.add("walk-side-idle", [4], 1, false);
-			sprite.add("walk-south", [5, 6, 7, 6], 8, true);
-			sprite.add("walk-south-idle", [6], 1, false);
+			sprite.add("walk-side", [4, 9, 5, 9], 8, true);
+			sprite.add("walk-side-idle", [9], 1, false);
+			sprite.add("walk-south", [3, 8, 7, 8], 8, true);
+			sprite.add("walk-south-idle", [8], 1, false);
 			
-			//setHitbox(sprite.scaledWidth, sprite.scaledHeight - 20, originX, originY - 20);
+			collidable = false;
 
 			m_mouseCursor = new Cursor();
 		}
@@ -59,114 +64,142 @@ package com.mattrudder.gnomemercy.entity
 			
 			if (m_fireOrigin == null)
 				return;
-			
-				
-			var lines:Array = new Array(45, 225, 315, 135);
-			
-			//for (var i:int = 0; i < lines.length; i++) 
-			//{
-				//var angle:int = lines[i];
-				//var line:Vector3D = MathUtils.AngleToVec(angle);
-				//line.scaleBy(100);
-				//Draw.linePlus(m_fireOrigin.x, m_fireOrigin.y, m_fireOrigin.x + line.x, m_fireOrigin.y - line.y, 0xFFFF0000, 1, 3);
-				//Draw.text(angle.toString(), m_fireOrigin.x + line.x, m_fireOrigin.y + line.y);
-			//}
 		}
 		
 		override public function update():void 
 		{
 			super.update();
 			
-			m_movingFrame = false;
-			m_fireOrigin = new Vector3D(x + width / 2, y + height / 2 + 20); 
-			m_mouseDirection = FP.angle(m_fireOrigin.x, m_fireOrigin.y, world.mouseX, world.mouseY);
+			var movingFrame:Boolean = false;
 			
-			if (m_mouseDirection >= 45 && m_mouseDirection <= 135) // north
+			if (health > 0)
 			{
-				m_direction = Direction.NORTH;
+				m_fireOrigin = new Vector3D(x + halfWidth, y + halfHeight); 
+				m_mouseDirection = FP.angle(m_fireOrigin.x, m_fireOrigin.y, world.mouseX + m_mouseCursor.halfWidth, world.mouseY + m_mouseCursor.halfHeight);
+				
+				m_currentWalkSpeed = BASE_WALK;
+				for (var i:int = 0; i < m_powerups.length; i++) 
+				{
+					p = m_powerups[i] as Powerup;
+					p.timeActive -= FP.elapsed;
+					if (p.timeActive <= 0)
+					{
+						m_powerups.splice(i, 1);
+						i--;
+					}
+					else
+					{
+						if (p is GasCan)
+							m_currentWalkSpeed += c_gasCanBuff;
+					}
+					
+				}
+				
+				// DIRECTIONAL
+				var velX:Number = 0;
+				var velY:Number = 0;
+				if (Input.check(Key.S)) // south
+				{
+					velY = m_currentWalkSpeed;
+					movingFrame = true;
+				}
+				else if (Input.check(Key.W)) // north
+				{
+					velY = -m_currentWalkSpeed;
+					movingFrame = true;
+				}
+				
+				if (Input.check(Key.D)) // east
+				{
+					velX = m_currentWalkSpeed;
+					movingFrame = true;
+				}
+				else if (Input.check(Key.A)) // west
+				{
+					velX = -m_currentWalkSpeed;
+					movingFrame = true;
+				}
+				
+				velX *= FP.elapsed;
+				velY *= FP.elapsed;
+				
+				if (velX != 0 && velY != 0)
+				{
+					velX = (velX * 0.7);
+					velY = (velY * 0.7);
+				}
+				
+				tryMove(x + velX, y + velY);
+				
+				var p:Powerup = collide("powerup", x, y) as Powerup;
+				if (p)
+				{
+					if (p is Toadstool)
+					{
+						if (m_health < 100)
+						{
+							m_health += 25;
+							if (m_health > 100)
+								m_health = 100;
+						}
+					}
+					else
+					{
+						addBuff(p);
+					}
+					
+					world.remove(p);
+				}
+				
+				m_direction = AnimUtils.getDirection(m_mouseDirection, sprite);
+				AnimUtils.playDirection(m_direction, movingFrame, sprite);
+				
+				// WEAPONS
+				if (Input.mouseDown && m_fireDelay <= 0)
+				{
+					shoot();
+					m_fireDelay = fire;
+				}
+				
+				m_fireDelay -= FP.elapsed;
+
+				var e:Enemy = collide("enemy", x, y) as Enemy;
+				if (collidable && e && m_health > 0)
+				{
+					var v:Vector3D = MathUtils.AngleToVec(FP.angle(x, y, e.x, e.y));
+					tryMove(x + v.x * 60, y + v.y * 60);
+					
+					m_health -= 15;
+					
+					if (m_health <= 0)
+					{
+						m_health = 0;
+						sprite.play("death");
+					}
+				}
+				
 			}
-			else if (m_mouseDirection >= 135 && m_mouseDirection <= 225) // west
-			{
-				m_direction = Direction.WEST;
-				sprite.flipped = false;
-			}
-			else if (m_mouseDirection >= 225 && m_mouseDirection <= 315) // south
-			{
-				m_direction = Direction.SOUTH;
-			}
-			else // east
-			{
-				m_direction = Direction.EAST;
-				sprite.flipped = true;
-			}
-			
-			// DIRECTIONAL
-			if (Input.check(Key.S)) // south
-			{
-				y += 250 * FP.elapsed;
-				m_movingFrame = true;
-			}
-			else if (Input.check(Key.W)) // north
-			{
-				y -= 250 * FP.elapsed;
-				m_movingFrame = true;
-			}
-			
-			if (Input.check(Key.D)) // east
-			{
-				x += 250 * FP.elapsed;
-				m_movingFrame = true;
-			}
-			else if (Input.check(Key.A)) // west
-			{
-				x -= 250 * FP.elapsed;
-				m_movingFrame = true;
-			}
-			
-			sprite.play(getAnimName());
-			
-			// WEAPONS
-			if (Input.mouseDown && m_fireDelay <= 0)
-			{
-				shoot();
-				m_fireDelay = fire;
-			}
-			
-			m_fireDelay -= FP.elapsed;
 		}
 		
-		private function getAnimName():String 
+		public function addBuff(p:Powerup):void 
 		{
-			var animBaseName:String;
-			switch (m_direction)
-			{
-			case Direction.NORTH:
-				animBaseName = "walk-north";
-				break;
-			case Direction.SOUTH:
-				animBaseName = "walk-south";
-				break;
-			case Direction.EAST:
-			case Direction.WEST:
-				animBaseName = "walk-side";
-				break;
-			default:
-				return null;
-			}
-			
-			FP.log(animBaseName + ": Dir = " + m_mouseDirection.toFixed());
-			return m_movingFrame ? animBaseName : animBaseName + "-idle";
+			m_powerups.push(p);
 		}
 		
 		private function shoot():void
 		{
-			FP.world.add(LawnDart.create(m_fireOrigin.x + DIRECTION_XOFFSETS[m_direction], m_fireOrigin.y + DIRECTION_YOFFSETS[m_direction], m_mouseDirection, 750));
+			// HACK: Mega hacks inbound...
+			FP.world.add(LawnDart.create(m_fireOrigin.x + DIRECTION_XOFFSETS[m_direction], m_fireOrigin.y + DIRECTION_YOFFSETS[m_direction], m_mouseDirection + DIRECTION_ANGLEOFFSETS[m_direction], 750));
 		}
 
 		
-		private static const BASE_FIRE:Number = 0.3;
-		private static const DIRECTION_XOFFSETS:Array = new Array(0, 0, 0, 20, -40);
-		private static const DIRECTION_YOFFSETS:Array = new Array(0, 20, 20, -20, 20);
+		private static const BASE_FIRE:Number = 0.5;
+		private static const BASE_WALK:Number = 250;
+		private static const c_gasCanBuff:Number = 100;
+		
+		private static const DIRECTION_XOFFSETS:Array = new Array(0, -20, 20, 40, -40);
+		private static const DIRECTION_YOFFSETS:Array = new Array(0, -40, 20, -10, 30);
+		private static const DIRECTION_ANGLEOFFSETS:Array = new Array(0, 5, 3, 5, 3);
 		
 		private var m_fireDelay:Number = 0;
 		
@@ -174,6 +207,9 @@ package com.mattrudder.gnomemercy.entity
 		private var m_mouseCursor:Cursor;
 		private var m_fireOrigin:Vector3D;
 		private var m_direction:uint;
-		private var m_movingFrame:Boolean;
+		private var m_powerups:Array = new Array;
+		private var m_currentFireSpeed:Number;
+		private var m_currentWalkSpeed:Number;
+		private var m_health:Number = 100;
 	}
 }

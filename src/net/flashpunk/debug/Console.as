@@ -350,12 +350,12 @@ package net.flashpunk.debug
 				// Set the console to paused mode.
 				if (_debug) debug = true;
 				else updateLog();
-				
-				Mouse.show();
+
+//				Mouse.show();
 			}
 			else
 			{
-				Mouse.hide();
+//				Mouse.hide();
 				
 				// Set the console to running mode.
 				_debRead.visible = false;

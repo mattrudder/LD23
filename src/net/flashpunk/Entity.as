@@ -5,6 +5,7 @@ package net.flashpunk
 	import flash.geom.Rectangle;
 	import flash.utils.getDefinitionByName;
 	import flash.utils.getQualifiedClassName;
+	import com.mattrudder.gnomemercy.Registry;
 
 	import net.flashpunk.graphics.*;
 
@@ -602,6 +603,31 @@ package net.flashpunk
 		{
 			var s:String = String(_class);
 			return s.substring(7, s.length - 1);
+		}
+		
+		public function tryMove(newX:Number, newY:Number):Boolean
+		{
+			var movedX:Boolean = false;
+			var movedY:Boolean = false;
+			if (!Registry.game.level.isSolid(newX, y) && 
+				!Registry.game.level.isSolid(newX + width, y) &&
+				!Registry.game.level.isSolid(newX, y + height) &&
+				!Registry.game.level.isSolid(newX + width, y + height))
+			{
+				x = newX;
+				movedX = true;
+			}
+			
+			if (!Registry.game.level.isSolid(x, newY) && 
+				!Registry.game.level.isSolid(x + width, newY) &&
+				!Registry.game.level.isSolid(x, newY + height) &&
+				!Registry.game.level.isSolid(x + width, newY + height))
+			{
+				y = newY;
+				movedY = true;
+			}
+			
+			return movedX && movedY;
 		}
 		
 		/**

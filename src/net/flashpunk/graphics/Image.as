@@ -385,6 +385,8 @@ package net.flashpunk.graphics
 		 */
 		public function get locked():Boolean { return _locked; }
 		
+		public function get buffer():BitmapData { return _buffer; }
+		
 		// Locking
 		/** @private */ protected var _locked:Boolean = false;
 		/** @private */ protected var _needsClear:Boolean = false;
